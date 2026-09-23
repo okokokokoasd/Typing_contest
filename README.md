@@ -60,13 +60,25 @@
 | `api.php`            | 成绩接口（见上）                                          |
 | `stress_test.py`     | 压测脚本：模拟 N 人 × 多轮并发，keep-alive 连接复用，校验记录增量与 uid 去重 |
 | `rate_limit_test.py` | 限速验证脚本：多线程高频请求，验证 Web 层封禁是否生效                     |
-| `修改说明.md`            | 本文档                                               |
+| `README.md`          | 本文档                                               |
 
 **服务端配套措施**（不在本仓库内）：
 
-- Apache + PHP（`mod_php`）；`php-fpm` 调优建议见 README；
+- Apache + PHP（`mod_php`，php-fpm worker 数按服务器内存调优）；
 - `mod_evasive` 单 IP 限速：1 秒内同一 URL 超 10 次即封禁 60 秒（实测第 17 个请求触发）；
 - 服务端本机实测约 **161 请求/秒**，而百人比赛的真实负载约 1~2 请求/秒，余量充足。
+
+**mod_evasive 限速原理**：
+
+![mod_evasive 限速原理](./mod_evasive.png)
+
+```
+客户端请求 → 查封禁表（内存哈希 O(1)）→ 计数器 +1（按 IP+URL 统计）→ 1 秒内 > 10 次？
+ ├─ 否 → 放行到 PHP，正常记录成绩
+ └─ 是 → 直接返回 403，60 秒内全部拦截
+```
+
+计数表与封禁表都在内存哈希表中，查询 O(1)，Apache 重启自动清零；被封的请求不进入 PHP，不消耗后端资源。
 
 ## 线上部署
 
@@ -98,5 +110,6 @@
 | `index.html`                            | 修改   | 由原版 `index(原始).html` 改造（161 处新增 / 82 处修改） |
 | `index(原始).html`                        | 原版快照 | 来自上游仓库，用于对比                               |
 | `api.php`                               | 新增   | 成绩接口                                      |
+| `mod_evasive.png`                       | 新增   | 限速原理示意图（本文档引用）                            |
 | `stress_test.py` / `rate_limit_test.py` | 新增   | 测试工具                                      |
 | `recruitment-cover.jpg`、站点图标等           | 未改动  | 沿用原版资源                                    |
