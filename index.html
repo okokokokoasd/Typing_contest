@@ -1,0 +1,694 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F7F8F8">
+  <title>打字比赛 | 个人打字挑战</title>
+  <meta name="description" content="打字比赛：中文与英文长文本打字挑战，实时显示速度、准确率与进度，一局结束按完成度和准确率给出综合分并生成成绩单。">
+  <meta name="author" content="技术部">
+  <meta name="copyright" content="Copyright © 2026 广西师范大学 · 技术部 · 保留所有权利">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="打字比赛 | 个人打字挑战">
+  <meta property="og:description" content="中文与英文长文本打字挑战，实时速度、准确率与综合评分。">
+  <meta property="og:url" content="https://yan-stone-computer.github.io/typing-challenge/">
+  <meta property="og:image" content="https://yan-stone-computer.github.io/typing-challenge/site-icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="site-icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="site-icon-180.png">
+  <link rel="preload" as="image" href="recruitment-cover.jpg" fetchpriority="high">
+  <style>
+    :root {
+      --surface: #F7F8F8;
+      --raised: #FBFCFC;
+      --overlay: #EAEDEC;
+      --border: #DDDFDF;
+      --border-strong: #B6BBBA;
+      --ink: #1D2B28;
+      --secondary: #3F6961;
+      --muted: #646D6B;
+      --panel: #111817;
+      --panel-line: #515C5A;
+      --panel-text: #D8DEDD;
+      --panel-muted: #959C9A;
+      --accent: #E85A3A;
+      --accent-hover: #F07559;
+      --accent-soft: #F5E5E1;
+      --danger: #C03A2B;
+      --success: #2F7D4F;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--surface); color: var(--ink); font: 16px/1.5 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    button, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    ::selection { background: var(--accent-soft); color: var(--ink); }
+    #app[hidden], .unlock-screen[hidden], #challenge-view[hidden], #score-view[hidden], #identity-fields[hidden] { display: none; }
+    #fs-hint { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: var(--surface); color: var(--secondary); font-size: 18px; cursor: pointer; user-select: none; }
+    #fs-hint[hidden] { display: none; }
+    .wrap { width: min(100% - 64px, 1200px); margin-inline: auto; }
+    .unlock-screen { min-height: 100dvh; display: flex; flex-direction: column; }
+    .unlock-top { min-height: 72px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+    .unlock-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 64px; align-items: center; padding-block: 64px; }
+    .unlock-intro h1 { margin-bottom: 32px; }
+    .unlock-visual { width: min(100%, 390px); aspect-ratio: 1080 / 1520; border-radius: 8px; overflow: hidden; background: var(--raised); }
+    .unlock-visual img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .unlock-form { background: var(--raised); border: 1px solid var(--border); border-radius: 8px; padding: 32px; }
+    .unlock-form h2 { margin: 0 0 24px; font-size: 22px; line-height: 1.25; }
+    .unlock-form label { display: block; color: var(--secondary); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .identity-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .identity-fields > div { min-width: 0; }
+    .unlock-form input { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--ink); outline: none; }
+    .unlock-form input:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px var(--overlay); }
+    .unlock-form input[aria-invalid="true"] { border-color: var(--danger); }
+    .unlock-error { min-height: 24px; margin: 8px 0 16px; color: var(--danger); font-size: 13px; }
+    .unlock-form .primary { width: 100%; }
+    header { height: 72px; border-bottom: 1px solid var(--border); }
+    .header-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; white-space: nowrap; }
+    .brand svg { width: 30px; height: 30px; color: var(--accent); }
+    .best { color: var(--secondary); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+    .best strong { display: block; color: var(--ink); font-size: 15px; }
+    main { padding-top: 32px; padding-bottom: 80px; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 48px; line-height: 1.14; font-weight: 850; letter-spacing: 0; }
+    .intro p { margin: 8px 0 0; color: var(--secondary); }
+    .identity-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0 0 24px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .identity-grid div { min-width: 0; }
+    .identity-grid dt { color: var(--secondary); font-size: 12px; font-weight: 700; }
+    .identity-grid dd { margin: 4px 0 0; font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+    .round-mark { color: var(--muted); font: 700 13px/1.3 "Bahnschrift", "Arial Narrow", sans-serif; white-space: nowrap; }
+    .controls { display: flex; align-items: end; gap: 24px; padding: 12px 0 16px; border-top: 1px solid var(--border); }
+    .control-group { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .control-group legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--secondary); }
+    .segment { display: flex; padding: 4px; background: var(--overlay); border-radius: 6px; gap: 4px; }
+    .segment button { min-height: 40px; border: 0; background: transparent; color: var(--secondary); border-radius: 4px; padding: 0 16px; font-size: 14px; font-weight: 700; white-space: nowrap; transition: background-color .15s, color .15s, transform .15s; }
+    .segment button[aria-pressed="true"] { background: var(--raised); color: var(--ink); }
+    .segment button:hover:not(:disabled) { color: var(--ink); }
+    .segment button:active:not(:disabled), .primary:active:not(:disabled), .quiet:active:not(:disabled) { transform: scale(.97); }
+    .control-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .primary, .quiet { min-height: 48px; border-radius: 6px; padding: 0 24px; font-size: 15px; font-weight: 800; white-space: nowrap; transition: background-color .15s, transform .15s; }
+    .primary { border: 1px solid var(--accent); background: var(--accent); color: var(--panel); }
+    .primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .quiet { border: 1px solid var(--border-strong); background: transparent; color: var(--ink); }
+    .quiet:hover:not(:disabled) { background: var(--overlay); }
+    .quiet[hidden] { display: none; }
+    .typing { display: grid; grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); gap: 32px; padding-top: 24px; align-items: start; }
+    .panel { position: sticky; top: 24px; background: var(--panel); color: var(--panel-text); border-radius: 12px; padding: 24px; }
+    .panel-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .panel-head h2 { margin: 0; color: var(--surface); font-size: 18px; line-height: 1.25; }
+    .panel-state { margin: 4px 0 0; color: var(--panel-muted); font-size: 13px; }
+    .clock { font: 700 32px/1 "Bahnschrift", "Arial Narrow", system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--surface); white-space: nowrap; }
+    .clock small { font-size: 13px; color: var(--panel-muted); margin-left: 4px; }
+    .progress-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 8px; color: var(--panel-text); font-size: 13px; }
+    .progress-head strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+    progress { display: block; width: 100%; height: 8px; border: 0; border-radius: 4px; overflow: hidden; background: var(--panel-line); accent-color: var(--accent); }
+    progress::-webkit-progress-bar { background: var(--panel-line); }
+    progress::-webkit-progress-value { background: var(--accent); }
+    progress::-moz-progress-bar { background: var(--accent); }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--panel-line); }
+    .metric-label { display: block; color: var(--panel-muted); font-size: 13px; }
+    .metric-value { display: block; margin-top: 4px; color: var(--surface); font: 750 34px/1.15 "Bahnschrift", "Arial Narrow", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+    .metric-value small { font-size: 13px; font-weight: 600; color: var(--panel-muted); margin-left: 2px; }
+    .copy-area { min-width: 0; }
+    .copy-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; color: var(--secondary); font-size: 13px; font-weight: 700; }
+    .target { min-height: 200px; max-height: 216px; padding: 16px 24px 20px; border-radius: 8px; background: var(--overlay); color: var(--ink); font-size: 21px; line-height: 1.75; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .target span.done { color: var(--success); }
+    .target span.error { color: var(--danger); background: var(--accent-soft); }
+    .target span.next { border-bottom: 2px solid var(--accent); }
+    label[for="type-input"] { display: block; color: var(--secondary); font-size: 13px; font-weight: 700; margin: 20px 0 8px; }
+    textarea { display: block; width: 100%; height: 120px; padding: 14px 16px; resize: vertical; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--raised); color: var(--ink); line-height: 1.6; outline: none; caret-color: var(--accent); }
+    .target, textarea { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+    .target::-webkit-scrollbar, textarea::-webkit-scrollbar { width: 8px; height: 8px; }
+    .target::-webkit-scrollbar-track, textarea::-webkit-scrollbar-track { background: transparent; }
+    .target::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+    .target::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+    textarea::placeholder { color: var(--muted); opacity: 1; }
+    textarea:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px var(--overlay); }
+    textarea:disabled { background: var(--overlay); color: var(--muted); }
+    .input-feedback { min-height: 24px; margin: 8px 0 0; color: var(--secondary); font-size: 13px; }
+    .input-feedback.error { color: var(--danger); }
+    #score-view { min-height: 100dvh; display: flex; flex-direction: column; }
+    .score-main { flex: 1; padding-top: 48px; padding-bottom: 40px; }
+    .score-heading { margin-bottom: 32px; }
+    .score-heading p { margin: 8px 0 0; color: var(--secondary); }
+    .score-identity { margin-bottom: 32px; }
+    .score-numbers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; padding: 32px; border-radius: 8px; background: var(--panel); color: var(--panel-text); }
+    .score-numbers > div > span { display: block; font-size: 13px; }
+    .score-numbers strong { display: block; margin-top: 4px; color: var(--surface); font: 750 48px/1.2 "Bahnschrift", "Arial Narrow", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+    .score-numbers strong span { font: inherit; }
+    .score-numbers small { font-size: 14px; font-weight: 600; color: var(--panel-muted); }
+    .score-total { font: 800 72px/1 "Bahnschrift", "Arial Narrow", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+    .score-total small { font-size: 20px; color: var(--secondary); }
+    .score-note { margin: 16px 0 0; color: var(--secondary); font-size: 13px; }
+    .score-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .capture-status { min-height: 24px; margin: 12px 0 0; color: var(--secondary); font-size: 13px; }
+    .history { margin-top: 56px; border-top: 1px solid var(--border); padding-top: 24px; }
+    .history h2 { margin: 0 0 16px; font-size: 20px; }
+    .history ol { list-style: none; margin: 0; padding: 0; }
+    .history li { display: grid; grid-template-columns: minmax(88px, 1fr) minmax(110px, 1fr) minmax(120px, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 14px; font-variant-numeric: tabular-nums; }
+    .history li strong { font-weight: 800; }
+    .history li span:last-child { text-align: right; color: var(--secondary); }
+    .history-empty { color: var(--secondary); font-size: 14px; }
+    footer { border-top: 1px solid var(--border); padding: 24px 0 40px; color: var(--muted); font-size: 12px; }
+    .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; }
+    .footer-inner .copyright { color: var(--muted); }
+    .footer-inner .copyright strong { color: var(--secondary); font-weight: 800; }
+    @media (max-width: 760px) {
+      .wrap { width: min(100% - 32px, 1200px); }
+      .unlock-top { min-height: 60px; }
+      .unlock-main { grid-template-columns: 1fr; gap: 24px; align-content: center; padding-block: 40px; }
+      .unlock-intro h1 { margin-bottom: 24px; }
+      .unlock-visual { width: min(100%, 220px); }
+      .unlock-form { padding: 24px; }
+      header { height: 60px; }
+      main { padding-top: 32px; padding-bottom: 56px; }
+      h1 { font-size: 36px; }
+      .intro { margin-bottom: 24px; }
+      .identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .score-numbers { gap: 16px; padding: 24px; }
+      .score-numbers strong { font-size: 34px; }
+      .round-mark { display: none; }
+      .controls { flex-wrap: wrap; gap: 16px; }
+      .control-actions { width: 100%; margin: 0; }
+      .control-actions .primary { flex: 1; }
+      .typing { display: flex; flex-direction: column; gap: 24px; padding-top: 24px; }
+      .panel { position: static; padding: 20px; }
+      .metric-value { font-size: 30px; }
+      .target { font-size: 18px; padding: 16px; min-height: 224px; }
+    }
+    @media (max-width: 420px) {
+      .best { font-size: 11px; }
+      .best strong { font-size: 13px; }
+      .brand { font-size: 16px; gap: 8px; }
+      .brand svg { width: 26px; }
+      .segment button { padding-inline: 12px; }
+      .clock { font-size: 28px; }
+      .panel-head h2 { font-size: 17px; }
+      .identity-fields { grid-template-columns: 1fr; }
+      .score-numbers { grid-template-columns: 1fr 1fr; }
+      .score-actions > button { width: 100%; }
+      .history li { grid-template-columns: 1fr 1fr; }
+      .history li span:last-child { grid-column: 1 / -1; text-align: left; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <section class="unlock-screen" id="unlock-screen" aria-labelledby="unlock-title">
+    <div class="unlock-top"><div class="wrap brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--panel)"/><path d="M13.6 3.4 6.6 13.6h4.2l-1 7.2 7-10.4h-4.2z" fill="var(--accent)"/></svg><span>打字比赛</span></div></div>
+    <div class="wrap unlock-main">
+      <div class="unlock-intro"><h1 id="unlock-title" tabindex="-1">挑战已锁定</h1><div class="unlock-visual"><img src="recruitment-cover.jpg" alt="广西师范大学计算机协会2026招新海报" width="1080" height="1520" decoding="async" fetchpriority="high"></div></div>
+      <form class="unlock-form" id="unlock-form">
+        <h2 id="unlock-form-title">解锁挑战</h2>
+        <div class="identity-fields" id="identity-fields">
+          <div><label for="student-id">学号</label><input id="student-id" type="text" autocomplete="off" maxlength="32" required></div>
+          <div><label for="student-name">名字</label><input id="student-name" type="text" autocomplete="name" maxlength="40" required></div>
+          <div><label for="student-college">学院</label><input id="student-college" type="text" autocomplete="organization" maxlength="80" required></div>
+          <div><label for="student-major">专业</label><input id="student-major" type="text" autocomplete="off" maxlength="80" required></div>
+        </div>
+        <label for="unlock-password">访问密码</label><input id="unlock-password" type="password" autocomplete="current-password" aria-describedby="unlock-error" required>
+        <p class="unlock-error" id="unlock-error" role="alert"></p><button class="primary" id="unlock-submit" type="submit">进入挑战</button>
+      </form>
+    </div>
+    <footer><div class="wrap footer-inner"><span class="copyright">Copyright © 2026 广西师范大学 · <strong>技术部</strong> · 保留所有权利</span><span>打字比赛 · 个人打字挑战</span></div></footer>
+  </section>
+  <div id="app" hidden inert>
+  <div id="challenge-view">
+  <header>
+    <div class="wrap header-inner">
+      <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--panel)"/><path d="M13.6 3.4 6.6 13.6h4.2l-1 7.2 7-10.4h-4.2z" fill="var(--accent)"/></svg><span>打字比赛</span></div>
+      <div class="best">个人最佳<strong id="best">暂无记录</strong></div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="intro"><div><h1>个人打字挑战</h1><p id="intro-status">准备就绪</p></div><span class="round-mark" id="round">第 01 次</span></div>
+    <dl class="identity-grid" aria-label="参赛信息">
+      <div><dt>学号</dt><dd data-identity="id"></dd></div><div><dt>名字</dt><dd data-identity="name"></dd></div><div><dt>学院</dt><dd data-identity="college"></dd></div><div><dt>专业</dt><dd data-identity="major"></dd></div>
+    </dl>
+    <div class="controls">
+      <fieldset class="control-group" id="language-group"><legend>挑战语言</legend><div class="segment"><button type="button" data-language="zh" aria-pressed="true">中文</button><button type="button" data-language="en" aria-pressed="false">English</button></div></fieldset>
+      <div class="control-actions"><button class="quiet" id="stop" type="button" hidden>结束挑战</button><button class="primary" id="start" type="button">开始挑战</button></div>
+    </div>
+    <section class="typing" aria-label="打字区">
+      <section class="panel" aria-labelledby="session-title">
+        <div class="panel-head"><div><h2 id="session-title">本次表现</h2><p class="panel-state" id="session-state">尚未开始</p></div><div class="clock"><span id="timer">00:00</span><small>用时</small></div></div>
+        <div class="progress-head"><span>完成进度</span><strong id="progress-text">0%</strong></div><progress id="progress" max="100" value="0" aria-label="完成进度">0%</progress>
+        <div class="metrics"><div><span class="metric-label">速度</span><span class="metric-value"><span id="speed">0</span><small id="speed-unit">字/分</small></span></div><div><span class="metric-label">准确率</span><span class="metric-value"><span id="accuracy">100</span><small>%</small></span></div></div>
+      </section>
+      <div class="copy-area"><div class="copy-head"><span>挑战文本</span><span id="text-length">0 字</span></div><div class="target" id="target" aria-label="挑战文本"></div><label for="type-input">输入区</label><textarea id="type-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="input-feedback" placeholder="请点击开始挑战…" disabled></textarea><p class="input-feedback" id="input-feedback" role="status">点击“开始挑战”。</p></div>
+    </section>
+    <section class="history" aria-labelledby="history-title"><h2 id="history-title">最近成绩</h2><ol id="history-list"></ol><p class="history-empty" id="history-empty">还没有完成的挑战。</p></section>
+  </main>
+  <footer><div class="wrap footer-inner"><span class="copyright">Copyright © 2026 广西师范大学 · <strong>技术部</strong> · 保留所有权利</span><span>打字比赛 · 云端成绩记录</span></div></footer>
+  </div>
+  <section id="score-view" aria-labelledby="result-title" hidden>
+    <header><div class="wrap header-inner"><div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--panel)"/><path d="M13.6 3.4 6.6 13.6h4.2l-1 7.2 7-10.4h-4.2z" fill="var(--accent)"/></svg><span>打字比赛</span></div><span class="round-mark">个人成绩单</span></div></header>
+    <main class="wrap score-main">
+      <div class="score-heading"><h1 id="result-title"></h1><p id="result-detail"></p></div>
+      <dl class="identity-grid score-identity" aria-label="参赛信息">
+        <div><dt>学号</dt><dd data-identity="id"></dd></div><div><dt>名字</dt><dd data-identity="name"></dd></div><div><dt>学院</dt><dd data-identity="college"></dd></div><div><dt>专业</dt><dd data-identity="major"></dd></div>
+      </dl>
+      <div class="score-total"><span id="score-total">0</span><small> / 100 分</small></div>
+      <div class="score-numbers"><div><span>打字速度</span><strong><span id="score-speed">0</span><small id="score-unit">字/分</small></strong></div><div><span>准确率</span><strong><span id="score-accuracy">100</span><small>%</small></strong></div><div><span>完成度</span><strong><span id="score-completion">0</span><small>%</small></strong></div><div><span>用时</span><strong><span id="score-time">0.0</span><small>秒</small></strong></div></div>
+      <p class="score-note" id="score-note"></p>
+      <div class="score-actions"><button class="primary" id="done" type="button">完成，下一位</button></div>
+      <p class="capture-status" id="upload-status" role="status"></p>
+      <p class="capture-status" id="download-status" role="status"></p>
+    </main>
+    <footer><div class="wrap footer-inner"><span class="copyright">Copyright © 2026 广西师范大学 · <strong> 技术部</strong> · 保留所有权利</span><span>打字比赛 · 个人成绩单</span></div></footer>
+  </section>
+  </div>
+  <div id="fs-hint" hidden>已退出全屏，点击任意位置恢复</div>
+  <script>
+    const passages = {
+      zh: [
+        '清晨的街道还很安静，第一班列车已经驶过桥面。站台上的人们有的低头读书，有的望着远处慢慢亮起的天空。早餐店开始升起热气，骑车的人沿着河岸经过，风里带着新一天的清爽。城市并不会在同一刻醒来，它从一扇窗、一盏灯和一声问候开始，渐渐有了自己的节奏。等阳光照到路口，匆忙的脚步也变得清晰，每个人都在向不同的地方出发。有人在背包里放好笔记，有人确认手机上的路线，而街边的花店正把新到的鲜花搬到门口。',
+        '雨停之后，树叶上的水珠仍在闪光。沿着小路向前走，空气变得清新，脚步也不知不觉轻快起来。公园里有人整理被风吹乱的长椅，孩子们绕过积水，寻找落在草地上的彩色树叶。远处的云慢慢散开，屋顶重新露出明亮的轮廓。这样的时刻不需要急着赶路，只要留心脚边的光影，就会发现熟悉的景色也有许多新的细节。池塘边传来轻轻的水声，几位老人坐在树下交谈，讨论哪条小路最适合散步。',
+        '每一次练习都在积累新的节奏。让双手跟随眼睛向前，不必着急，稳定而准确地抵达最后一个字。遇到错误时，停下来修改比一味加快更有效；找到顺畅的呼吸，速度自然会慢慢提高。今天的表现不必和别人相比，可以记下自己的进步，也可以看见尚未熟练的地方。下一次重新开始时，你会比现在更了解自己的节奏。把注意力放在当前这一行，完成后再看整体成绩，练习便会更有耐心，也更容易坚持。',
+        '城市的灯光依次亮起，窗边传来轻快的音乐。晚风穿过街角，带走白天的喧闹，留下片刻宁静。有人刚刚结束工作，走进熟悉的小店；有人抱着书坐在窗前，等一杯热茶慢慢变凉。夜色让街道显得宽阔，路灯把树影投向墙面。一天里那些急促的声音终于安静下来，剩下的时间可以用来整理思绪，也可以什么都不做。远处的公交车缓缓驶过，车窗里映出一张张平静的面孔，仿佛这座城市也开始放慢脚步。',
+        '图书馆的窗户面向一排高大的树，午后的光从枝叶间落到桌面。翻动纸页的声音很轻，偶尔有人起身去寻找一本书，又悄悄回到原来的座位。学习并不总是立刻得到答案，有时需要把一个问题放在心里，反复观察和尝试。等到线索慢慢连接起来，先前看似零散的想法便有了方向。安静的时间也因此变得充实。管理员推着小车经过走廊，把归还的书放回书架；窗外的云影缓缓移动，提醒人们时间仍在向前。',
+        '周末的集市沿着广场排开，摊主把新鲜的蔬菜和手工制作的物件摆放整齐。人们在不同的摊位之间慢慢走，询问价格，也分享最近的天气。广场中央有一位年轻人弹着吉他，几名路人停下脚步听完一首歌。热闹并没有打乱这里的秩序，每个人都可以按自己的速度寻找喜欢的东西。离开时，手中的纸袋装满了平常日子的小惊喜。回家的路上，阳光从建筑之间照过来，刚买的面包还带着温度，朋友已经开始商量下次再来。'
+      ],
+      en: [
+        'The first train crossed the bridge as the city woke. A few people waited on the platform, reading quietly while the morning light reached the rooftops. The small bakery near the station opened its doors, and the smell of fresh bread drifted into the street. Cyclists followed the river path while buses turned through the square. A city never wakes at a single moment; it gathers its rhythm from windows, footsteps, and ordinary greetings. By the time sunlight reached the corner, everyone was heading somewhere different.',
+        'After the rain, small drops of water still shone on every leaf. The path ahead felt open and bright, and each step carried a little more energy. In the park, a worker straightened the benches while children stepped around puddles in search of colorful leaves. The clouds slowly parted and the roofs regained their clear outlines. There was no reason to hurry through such a morning. By paying attention to the changing light, even a familiar place could offer something new to notice.',
+        'A steady rhythm grows through practice. Keep your eyes on the next word, let your hands follow, and reach the final line with care. When a mistake appears, taking a moment to correct it often helps more than trying to move faster. Speed comes naturally when the movements become familiar. There is no need to measure this attempt against anyone else. Record what went well, notice what still feels difficult, and return another day with a clearer sense of your own pace.',
+        'One by one, the city lights came on. Music drifted from an open window while the evening breeze cleared the noise of the busy afternoon. Some people had just finished work and stepped into a familiar shop. Others sat by the window with a book and a cup of tea. Street lamps cast the shadows of trees against old walls. The hurried sounds of the day gradually faded. The remaining hours could be spent planning tomorrow, remembering a conversation, or simply enjoying a quiet moment.',
+        'The library windows faced a row of tall trees, and afternoon sunlight moved across the tables. Pages turned softly as visitors searched the shelves and returned to their seats. Learning does not always produce an answer right away. A difficult question may need time, observation, and several attempts before the pieces begin to connect. When an idea finally becomes clear, earlier notes take on a different meaning. Quiet time can be full of movement, even when everyone in the room appears still.',
+        'The weekend market stretched along the square. Sellers arranged fresh vegetables, flowers, and handmade objects on neat tables. Visitors wandered between the stalls, asked about prices, and talked about the weather. In the center of the square, a young musician played a guitar while several people stopped to hear the end of a song. The crowd was lively without feeling rushed. Everyone could move at a comfortable pace and leave with a small discovery tucked into a paper bag.'
+      ]
+    };
+    const $ = id => document.getElementById(id);
+    let unlocked = false;
+    const state = { participant: null, language: 'zh', phase: 'idle', round: 1, index: -1, text: [], spans: [], previous: '', total: 0, correct: 0, prefix: 0, elapsed: 0, startTime: 0, frame: 0 };
+    const API_URL = 'api.php'; // 成绩接口地址，与 index.html 同目录部署；跨域名部署时改成完整 URL
+    let cloud = { best: null, history: [] }; // 服务器端成绩；null 表示尚未同步，回退到本地
+    let accessToken = ''; // 进场登录后领取的成绩签名令牌（服务端校验，绑定学号限时有效）
+    let accessExp = 0;
+
+    function bestKey() { return `typing-challenge-score-${state.participant.id}-${state.language}`; }
+    function bestValue() {
+      if (cloud.best !== null) return cloud.best;
+      try { return Number(localStorage.getItem(bestKey()) || 0); }
+      catch { return 0; }
+    }
+    function historyKey() { return `typing-challenge-history-${state.participant.id}-${state.language}`; }
+    function unit() { return state.language === 'zh' ? '字/分' : '词/分'; }
+    function speed() { return state.elapsed ? Math.round(state.prefix / (state.language === 'zh' ? 1 : 5) * 60 / state.elapsed) : 0; }
+    function accuracyRate() { return state.total ? state.correct / state.total : 1; }
+    function completionRate() { return state.prefix / state.text.length; }
+    function finalScore() {
+      const targetSpeed = state.language === 'zh' ? 80 : 45;
+      return Math.floor(100 * completionRate() * (.45 * Math.min(speed() / targetSpeed, 1) + .55 * accuracyRate()) + 1e-9);
+    }
+    function showBest() {
+      const value = bestValue();
+      $('best').textContent = value ? `${value} 分` : '暂无记录';
+    }
+    function history() {
+      if (cloud.history.length) return cloud.history;
+      try { const entries = JSON.parse(localStorage.getItem(historyKey()) || '[]'); return Array.isArray(entries) ? entries : []; }
+      catch { return []; }
+    }
+    function showHistory() {
+      const entries = history().slice(0, 5);
+      $('history-empty').hidden = entries.length > 0;
+      $('history-list').replaceChildren(...entries.map(entry => {
+        const row = document.createElement('li');
+        const date = document.createElement('span');
+        const pace = document.createElement('strong');
+        const detail = document.createElement('span');
+        date.textContent = entry.date;
+        pace.textContent = entry.score === undefined ? `${entry.speed} ${unit()}（旧记录）` : `${entry.score} 分`;
+        detail.textContent = `${entry.speed} ${unit()} · ${entry.accuracy}% · ${entry.completion ?? 100}%`;
+        row.replaceChildren(date, pace, detail);
+        return row;
+      }));
+    }
+    function applyCloud(data) {
+      cloud.best = Number(data.best) || 0;
+      cloud.history = Array.isArray(data.history) ? data.history : [];
+      try { // 同步一份到本地，服务器不可用时兜底显示
+        if (cloud.best) localStorage.setItem(bestKey(), String(cloud.best));
+        if (cloud.history.length) localStorage.setItem(historyKey(), JSON.stringify(cloud.history));
+      } catch { /* Storage may be unavailable in private browsing. */ }
+      showBest();
+      showHistory();
+    }
+    async function syncFromServer() {
+      try {
+        const response = await fetch(`${API_URL}?action=summary&id=${encodeURIComponent(state.participant.id)}&lang=${state.language}`);
+        const data = await response.json();
+        if (data && data.ok) applyCloud(data);
+      } catch { /* 服务器不可用时继续使用本地记录 */ }
+    }
+    async function uploadScore(record, attempt = 1) {
+      // 上传失败每 5 秒自动重试，直到成功；换人/返回首页后自动停止（服务器按 uid 去重，重复上传不会产生重复记录）
+      const isCurrent = () => state.participant && state.participant.id === record.id;
+      uploadSettled = false; // 自动切人等待上传尘埃落定
+      $('upload-status').textContent = attempt > 1 ? `正在上传成绩到服务器（第 ${attempt} 次尝试）…` : '正在上传成绩到服务器…';
+      try {
+        const response = await fetch(`${API_URL}?action=submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, record, { token: accessToken, exp: accessExp })), keepalive: true });
+        const data = await response.json();
+        if (!data || !data.ok) {
+          uploadSettled = true;
+          $('upload-status').textContent = `服务器未接受：${data && data.error ? data.error : '未知原因'}；成绩已保存在本机文件。`;
+          return;
+        }
+        uploadSettled = true;
+        applyCloud(data);
+        $('upload-status').textContent = '成绩已上传到服务器。';
+      } catch {
+        if (!isCurrent()) { uploadSettled = true; return; }
+        $('upload-status').textContent = `上传失败，5 秒后自动重试（已重试 ${attempt} 次）；成绩已保存在本机文件。`;
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        if (!isCurrent()) { uploadSettled = true; $('upload-status').textContent = '上传失败，成绩已保存在本机文件。'; return; }
+        return uploadScore(record, attempt + 1);
+      }
+    }
+    function downloadRecord(record) {
+      try {
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `打字成绩_${record.id}_${stamp}.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        $('download-status').textContent = '已自动保存成绩数据到下载文件夹。';
+      } catch {
+        $('download-status').textContent = '本地自动保存失败，成绩仍保存在服务器。';
+      }
+    }
+    function pickPassage() {
+      const options = passages[state.language];
+      state.index = (state.index + 1 + Math.floor(Math.random() * (options.length - 1))) % options.length;
+      state.text = Array.from(options[state.index]);
+      $('target').replaceChildren(...state.text.map(char => {
+        const span = document.createElement('span');
+        span.textContent = char;
+        return span;
+      }));
+      state.spans = Array.from($('target').children);
+      $('text-length').textContent = `${state.text.length} ${state.language === 'zh' ? '字' : '字符'}`;
+      $('speed-unit').textContent = unit();
+      renderText([]);
+    }
+    function renderText(typed) {
+      state.spans.forEach((span, i) => {
+        span.className = i < typed.length ? (typed[i] === state.text[i] ? 'done' : 'error') : i === typed.length ? 'next' : '';
+      });
+      const target = $('target');
+      target.scrollTop = typed.length ? Math.max(0, state.spans[Math.min(typed.length, state.spans.length - 1)].offsetTop - state.spans[0].offsetTop - target.clientHeight / 2) : 0;
+    }
+    function updateStats() {
+      $('speed').textContent = speed();
+      $('accuracy').textContent = state.total ? Math.round(state.correct / state.total * 100) : 100;
+      const seconds = Math.floor(state.elapsed);
+      $('timer').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      const progress = Math.floor(state.prefix / state.text.length * 100);
+      $('progress').value = progress;
+      $('progress-text').textContent = `${progress}%`;
+    }
+    function setControls(disabled) {
+      document.querySelectorAll('.segment button').forEach(button => button.disabled = disabled);
+      $('start').disabled = disabled;
+      $('stop').hidden = !disabled;
+    }
+    function prepare() {
+      cancelAnimationFrame(state.frame);
+      $('download-status').textContent = '';
+      state.phase = 'idle';
+      state.previous = '';
+      state.total = state.correct = state.prefix = state.elapsed = 0;
+      $('type-input').value = '';
+      $('type-input').disabled = true;
+      $('type-input').placeholder = '等待开始…';
+      $('input-feedback').textContent = '点击“开始挑战”。';
+      $('input-feedback').classList.remove('error');
+      $('session-state').textContent = '尚未开始';
+      $('intro-status').textContent = '准备就绪';
+      $('start').textContent = '开始挑战';
+      $('round').textContent = `第 ${String(state.round).padStart(2, '0')} 次`;
+      setControls(false);
+      pickPassage();
+      updateStats();
+      showBest();
+      showHistory();
+      syncFromServer();
+    }
+    function begin() {
+      if (!unlocked) return;
+      if (state.phase !== 'idle') return;
+      state.phase = 'running';
+      state.previous = '';
+      state.total = state.correct = state.prefix = state.elapsed = 0;
+      $('type-input').value = '';
+      $('intro-status').textContent = '挑战进行中';
+      $('session-state').textContent = '正在记录';
+      $('input-feedback').textContent = '保持节奏。';
+      setControls(true);
+      updateStats();
+      renderText([]);
+      state.startTime = performance.now();
+      $('type-input').disabled = false;
+      $('type-input').placeholder = '从第一个字开始…';
+      $('type-input').focus();
+      state.frame = requestAnimationFrame(tick);
+    }
+    function tick(now) {
+      if (state.phase !== 'running') return;
+      state.elapsed = (now - state.startTime) / 1000;
+      updateStats();
+      state.frame = requestAnimationFrame(tick);
+    }
+    function processInput() {
+      if (state.phase !== 'running') return;
+      const input = $('type-input');
+      const typed = Array.from(input.value.replace(/[\r\n]/g, '')).slice(0, state.text.length);
+      input.value = typed.join('');
+      const old = Array.from(state.previous);
+      let shared = 0;
+      while (shared < old.length && shared < typed.length && old[shared] === typed[shared]) shared++;
+      if (typed.length >= old.length) {
+        for (let i = shared; i < typed.length; i++) {
+          state.total++;
+          if (typed[i] === state.text[i]) state.correct++;
+        }
+      }
+      state.previous = input.value;
+      state.prefix = 0;
+      while (state.prefix < typed.length && typed[state.prefix] === state.text[state.prefix]) state.prefix++;
+      renderText(typed);
+      const wrong = typed.findIndex((char, i) => char !== state.text[i]);
+      $('input-feedback').textContent = wrong === -1 ? '保持节奏。' : `第 ${wrong + 1} 个字符有误，修改后继续。`;
+      $('input-feedback').classList.toggle('error', wrong !== -1);
+      updateStats();
+      if (state.prefix === state.text.length) finish('complete');
+    }
+    function finish(reason) {
+      if (state.phase !== 'running') return;
+      state.elapsed = (performance.now() - state.startTime) / 1000;
+      state.phase = 'finished';
+      cancelAnimationFrame(state.frame);
+      $('type-input').disabled = true;
+      setControls(false);
+      $('start').textContent = '再练一次';
+      $('session-state').textContent = '已结束';
+      $('intro-status').textContent = '本次挑战结束';
+      const accuracy = Math.round(accuracyRate() * 100);
+      const completed = reason === 'complete';
+      const previousBest = bestValue();
+      const score = finalScore();
+      const completion = Math.round(completionRate() * 100);
+      $('result-title').textContent = completed ? (score > previousBest ? '刷新个人最佳' : '挑战完成') : '挑战已结束';
+      $('result-detail').textContent = `第 ${state.round} 次 · ${state.language === 'zh' ? '中文' : 'English'} · ${completed ? '已完成全文' : `完成 ${Math.floor(state.prefix / state.text.length * 100)}%`}`;
+      $('score-total').textContent = score;
+      $('score-speed').textContent = speed();
+      $('score-unit').textContent = unit();
+      $('score-accuracy').textContent = accuracy;
+      $('score-completion').textContent = completion;
+      $('score-time').textContent = state.elapsed.toFixed(1);
+      $('score-note').textContent = `综合分 = 完成度 ×（速度 45% + 准确率 55%）；${state.language === 'zh' ? '80 字/分' : '45 词/分'}达到速度满分。`;
+      $('input-feedback').textContent = completed ? '已完成全文。' : '可以再次挑战。';
+      $('input-feedback').classList.remove('error');
+      try {
+        if (score > previousBest) localStorage.setItem(bestKey(), String(score));
+        const entries = [{ date: new Date().toLocaleDateString('zh-CN'), score, speed: speed(), accuracy, completion, seconds: state.elapsed.toFixed(1) }, ...history()].slice(0, 5);
+        localStorage.setItem(historyKey(), JSON.stringify(entries));
+      } catch { /* Storage may be unavailable in private browsing. */ }
+      const record = {
+        id: state.participant.id, name: state.participant.name, college: state.participant.college, major: state.participant.major,
+        language: state.language, round: state.round, score, speed: speed(), accuracy, completion,
+        seconds: state.elapsed.toFixed(1), date: new Date().toLocaleDateString('zh-CN'), savedAt: new Date().toISOString(),
+        uid: (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      };
+      uploadScore(record);    // 云服务器一份
+      downloadRecord(record); // 本机一份，双备份
+      showBest();
+      showHistory();
+      updateStats();
+      $('challenge-view').hidden = true;
+      $('score-view').hidden = false;
+      $('done').focus();
+      startAutoNext();
+    }
+    // 10 秒未点击"完成，下一位"自动进入下一位；成绩仍在重试上传时不切人
+    let autoNextTick = null;
+    let uploadSettled = true;
+    function startAutoNext() {
+      stopAutoNext();
+      let remain = 10;
+      const btn = $('done');
+      const label = () => { btn.textContent = remain > 0 ? `完成，下一位（${remain} 秒后自动）` : (uploadSettled ? '正在进入下一位…' : '等待成绩上传…'); };
+      label();
+      autoNextTick = setInterval(() => {
+        if (remain > 0) { remain -= 1; label(); return; }
+        if (!uploadSettled) return; // 还在上传/重试，继续等
+        stopAutoNext();
+        returnHome();
+      }, 1000);
+    }
+    function stopAutoNext() {
+      if (autoNextTick) { clearInterval(autoNextTick); autoNextTick = null; }
+      $('done').textContent = '完成，下一位';
+    }
+    // —— 全屏保持：退出后自动重回，仍失败则显示点击提示层 ——
+    let wantFullscreen = false;
+    let fsRetryTimer = null;
+    function enterFullscreen() {
+      try {
+        const req = document.documentElement.requestFullscreen();
+        if (req && req.catch) req.catch(() => { $('fs-hint').hidden = false; });
+      } catch { $('fs-hint').hidden = false; }
+    }
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) { $('fs-hint').hidden = true; return; }
+      if (!wantFullscreen) return;
+      if (fsRetryTimer) clearTimeout(fsRetryTimer);
+      fsRetryTimer = setTimeout(() => {
+        fsRetryTimer = null;
+        if (wantFullscreen && !document.fullscreenElement) enterFullscreen(); // 浏览器对刚退出的全屏有冷却期，稍后重试
+      }, 400);
+    });
+    $('fs-hint').addEventListener('click', enterFullscreen);
+    // 登记信息页首次交互即进入全屏（浏览器规定全屏必须由用户手势触发，无法打开页面就强制全屏）
+    const armFullscreen = () => {
+      wantFullscreen = true;
+      enterFullscreen();
+      document.removeEventListener('click', armFullscreen, true);
+      document.removeEventListener('keydown', armFullscreen, true);
+    };
+    document.addEventListener('click', armFullscreen, true);
+    document.addEventListener('keydown', armFullscreen, true);
+    document.querySelectorAll('[data-language]').forEach(button => button.addEventListener('click', () => {
+      if (state.phase !== 'idle' && state.phase !== 'finished') return;
+      state.language = button.dataset.language;
+      document.querySelectorAll('[data-language]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      prepare();
+    }));
+    $('start').addEventListener('click', begin);
+    $('stop').addEventListener('click', () => finish('stopped'));
+    $('type-input').addEventListener('beforeinput', event => { if (event.inputType === 'insertFromPaste' || event.inputType === 'insertFromDrop') event.preventDefault(); });
+    $('type-input').addEventListener('paste', event => event.preventDefault());
+    $('type-input').addEventListener('input', event => { if (!event.isComposing) processInput(); });
+    $('type-input').addEventListener('compositionend', processInput);
+    function returnHome() {
+      stopAutoNext();
+      cancelAnimationFrame(state.frame);
+      unlocked = false;
+      accessToken = ''; // 令牌跟人走，下一位重新登记领取
+      accessExp = 0;
+      state.participant = null;
+      state.phase = 'idle';
+      state.round = 1;
+      state.index = -1;
+      state.language = 'zh';
+      document.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === 'zh')));
+      document.querySelectorAll('[data-identity]').forEach(item => { item.textContent = ''; });
+      $('unlock-form').reset();
+      $('unlock-password').setAttribute('aria-invalid', 'false');
+      $('unlock-error').textContent = '';
+      $('score-view').hidden = true;
+      $('challenge-view').hidden = false;
+      $('app').hidden = true;
+      $('app').inert = true;
+      $('unlock-screen').hidden = false;
+      $('unlock-title').focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    $('done').addEventListener('click', () => { stopAutoNext(); returnHome(); });
+    $('unlock-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const input = $('unlock-password');
+      const fields = { id: $('student-id'), name: $('student-name'), college: $('student-college'), major: $('student-major') };
+      for (const field of Object.values(fields)) {
+        if (field.value.trim()) continue;
+        $('unlock-error').textContent = '请填写完整的参赛信息。';
+        field.focus();
+        return;
+      }
+      // 服务端校验访问密码并领取成绩签名令牌（绑定学号，限时有效）；密码不在网页源码中，由现场公布
+      const password = input.value;
+      input.value = '';
+      try {
+        const response = await fetch(`${API_URL}?action=login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, id: $('student-id').value.trim() }) });
+        const data = await response.json();
+        if (!data || !data.ok) {
+          input.setAttribute('aria-invalid', 'true');
+          $('unlock-error').textContent = data && data.error ? data.error : '访问密码不正确，请重新输入。';
+          input.focus();
+          return;
+        }
+        accessToken = String(data.token || '');
+        accessExp = Number(data.exp) || 0;
+      } catch {
+        accessToken = ''; // 服务器不可用：允许离线练习，成绩将仅保存在本机
+        accessExp = 0;
+      }
+      state.participant = { id: $('student-id').value.trim(), name: $('student-name').value.trim(), college: $('student-college').value.trim(), major: $('student-major').value.trim() };
+      document.querySelectorAll('[data-identity]').forEach(item => { item.textContent = state.participant[item.dataset.identity]; });
+      prepare();
+      unlocked = true;
+      input.value = '';
+      $('unlock-screen').hidden = true;
+      $('app').hidden = false;
+      $('app').inert = false;
+      wantFullscreen = true;
+      enterFullscreen(); // 进入挑战即全屏，防切屏/分心
+      $('start').focus();
+    });
+    $('unlock-password').addEventListener('input', () => {
+      $('unlock-password').setAttribute('aria-invalid', 'false');
+      $('unlock-error').textContent = '';
+    });
+    // 现场防护：禁用右键菜单和 DevTools 快捷键（防止选手查看页面源码/改成绩）
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+      const key = (event.key || '').toUpperCase();
+      if (event.key === 'F12' ||
+          (event.ctrlKey && event.shiftKey && ['I', 'J', 'C', 'K'].includes(key)) ||
+          (event.ctrlKey && key === 'U')) {
+        event.preventDefault();
+      }
+      if (event.key === 'Escape') { // 拦截 Esc；全屏态下浏览器仍会退出，由 fullscreenchange 自动重回
+        event.preventDefault();
+        if (wantFullscreen && !document.fullscreenElement) enterFullscreen();
+      }
+      if (event.altKey && key === 'X') { // 组织者逃生口：Alt+X 永久退出全屏模式
+        wantFullscreen = false;
+        $('fs-hint').hidden = true;
+        if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+  </script>
+</body>
+</html>
